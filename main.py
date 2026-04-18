@@ -1,4 +1,11 @@
 #Expense Management System
+import csv
+import os 
+from datetime import datetime 
+
+FILE_NAME = "expenses.csv"
+FIELDS = ["date", "amount", "Category", "payment_method", "description"]
+
 
 class Expense:
 
@@ -9,9 +16,41 @@ class Expense:
         self.payment_method = payment_method
         self.description = description
 
-    def display_expense(self):
-        print(f"Date: {self.date}, Amount: {self.amount}, Category: {self.category}, Payment Method: {self.payment_method}, Description: {self.description}")
+    def to_list(self):
+        return [self.date, self.amount, self.category, self.payment_method, self.description]
 
+    def display_expense(self, index = None):
+        prefix = f"{index}. " if index is not None else ""
+        print(f"{prefix} Date: {self.date} | Amount: {self.amount} | Category: {self.category} | Payment Method: {self.payment_method}|  Description: {self.description}") 
+
+
+#File handling
+
+def initialize_file():
+    if not os.path.exists(FILE_NAME):
+        with open(FILE_NAME, mode = 'w', newline = '') as file:
+            writer = csv.writer(file)
+            writer.writerow(FIELDS)
+
+def read_expenses():
+    expenses = []
+    try:
+        with open(FILE_NAME, mode = 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                expenses.append(Expense(**row))
+    except FileNotFoundError:
+        print("File not found. Initializing new file...")
+        initialize_file()
+    return expenses 
+
+
+def write_expenses(expenses):
+    with open(FILE_NAME, mode = 'w', newline = '') as file:
+        writer = csv.writer(file)
+        writer.writerow(FIELDS)
+        for exp in expenses:
+            writer.writerow(exp.to_list())
 
 
 if __name__ == "__main__":
