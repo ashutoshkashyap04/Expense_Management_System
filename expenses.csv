@@ -1,2 +1,3 @@
-05-05-2026,3000.0,Shopping,UPI,Bought clothes
-05-05-2026,1000.0,Transport,Cash,Went for shopping
+date,amount,category,payment_method,description
+05-05-2026,3000.0,Shopping,UPI,bought sports wear
+05-05-2026,1000.0,travel,cash,travel for shopping

@@ -4,14 +4,14 @@ import os
 from datetime import datetime 
 
 FILE_NAME = "expenses.csv"
-FIELDS = ["date", "amount", "Category", "payment_method", "description"]
+FIELDS = ["date", "amount", "category", "payment_method", "description"]
 
 
 class Expense:
 
     def __init__(self, date, amount,  category, payment_method, description):
         self.date = date
-        self.amount = amount
+        self.amount = float(amount)
         self.category = category
         self.payment_method = payment_method
         self.description = description
@@ -21,7 +21,7 @@ class Expense:
 
     def display_expense(self, index = None):
         prefix = f"{index}. " if index is not None else ""
-        print(f"{prefix} Date: {self.date} | Amount: {self.amount} | Category: {self.category} | Payment Method: {self.payment_method}|  Description: {self.description}") 
+        print(f"{prefix} Date: {self.date} | Amount: ₹{self.amount} | Category: {self.category} | Payment Method: {self.payment_method}|  Description: {self.description}") 
 
 
 #File handling
@@ -38,7 +38,15 @@ def read_expenses():
         with open(FILE_NAME, mode = 'r') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                expenses.append(Expense(**row))
+                expenses.append(
+                    Expense(
+                        row["date"],
+                        float(row["amount"]),
+                        row["category"],
+                        row["payment_method"],
+                        row["description"]
+                        )
+                    )
     except FileNotFoundError:
         print("File not found. Initializing new file...")
         initialize_file()
@@ -53,80 +61,140 @@ def write_expenses(expenses):
             writer.writerow(exp.to_list())
 
 
-if __name__ == "__main__":
-    def Menu_display():
-        print("Expense Management System")
-        print("1. Add Expense")
-        print("2. View Expenses")
-        print("3. Reset Expenses")
-        print("4. Update Expenses")
-        print("5. Exit")        
+# ----------Features -------------
 
-    while True:
-        Menu_display()
-        choice = int(input("Enter your choice: "))
+def add_expense():
+    try:
+        date = input("Enter date (DD-MM-YYYY): ")
+        datetime.strptime(date, "%d-%m-%Y")      #validate date
 
+        amount = float(input("Enter amount: "))
+        category = input("Enter category(Shopping, travel, etc): ")
+        payment_method = input("Enter Payment method: ")
+        description = input("Enter description: ")
+
+        expense = Expense(date, amount, category, payment_method, description)
+
+        expenses = read_expenses()
+        expenses.append(expense)
+        write_expenses(expenses)
+
+        print("✅ Expense added successfully!")
+
+    except ValueError:
+        print("❌ Invalid input. Please try again.")
+
+
+def view_expenses():
+    expenses = read_expenses()
+
+    if not expenses:
+        print("No expenses found.")
+        return
+
+    print("\n--- Expense List ---")
+    for i, exp in enumerate(expenses, start=1):
+        exp.display(i)
+
+    total = sum(exp.amount for exp in expenses)
+    print(f"\nTotal : ₹{total}")
+
+
+def reset_expenses():
+    confirm = input("Are you sure? (YES/NO): ")
+    if confirm.upper() == "YES":
+        initialize_file()
+        print("✅ All expenses reset.")
+    else:
+        print("Cancelled.")
+
+def update_expense():
+    expenses = read_expenses()
+
+    if not expenses:
+        print("No expenses to update.")
+        return
+
+    print("\n--- Select Expense ---")
+    for i, exp in enumerate(expenses, start=1):
+        exp.display(i)
+
+    try:
+        idx = int(input("Enter expense number: ")) - 1
+        if idx < 0 or idx >= len(expenses):
+            print("Invalid selection.")
+            return
+
+        exp = expenses[idx]
+
+        print("\nWhat do you want to update?")
+        print("1. Date")
+        print("2. Amount")
+        print("3. Category")
+        print("4. Payment Method")
+        print("5. Description")
+
+        choice = int(input("Enter choice: "))
+        new_value = input("Enter new value: ")
 
         if choice == 1:
-            date = input("Enter date (DD-MM-YYYY): ")
-            amount = float(input("Enter amount: "))
-            category = input("Enter category(e.g., Food, Transport, Utilities , Shopping): ")
-            payment_method = input("Enter payment method (e.g., Cash, Credit Card, UPI): ")
-            description = input("Enter description: ")
-            expense = Expense(date, amount, category, payment_method, description)
-            with open("expenses.csv", "a") as file:
-                file.write(f"{date},{amount},{category},{payment_method},{description}\n")
-                print("Expense added successfully!")
-
-
+            datetime.strptime(new_value, "%d-%m-%Y")
+            exp.date = new_value
         elif choice == 2:
-            print("Expenses:")
-            try:
-                with open('expenses.csv', 'r') as file:
-                    for line in file:
-                        date, amount, category, payment_method, description = line.strip().split(',')
-                        expense = Expense(date, float(amount), category, payment_method, description)
-                        expense.display_expense()
-            except FileNotFoundError:
-                print("No expenses recorded yet.")
-
-
+            exp.amount = float(new_value)
         elif choice == 3:
-            confirmation = input("Are you sure you want to reset all expenses? (YES/NO): ")
-            if confirmation.upper() == "YES":
-                open("expenses.csv", "w").close()
-                print("All expenses have been reset.")
-            else:
-                print("Reset operation cancelled.")
-
-
+            exp.category = new_value
         elif choice == 4:
-            print("Showing current expenses: ")
-            
-            for i, line in enumerate(open('expenses.csv', 'r').readlines()):
-                print(f"{i+1} -> {line.strip()}")
-
-
-            line_number_to_update=int(input("Enter the line number of the expense to update (starting from 1): "))
-            lines = open('expenses.csv', 'r').readlines()
-
-            columns=lines[line_number_to_update - 1].strip().split(',')
-            print("1.Date  , 2.Amount  , 3.Category  , 4.Payment Method  , 5.Description")
-            column_number_to_update=int(input("Enter the column number to update(1-5): "))
-
-            new_value=input("Enter the new value: ")
-            columns[column_number_to_update - 1] = new_value
-
-            lines[line_number_to_update - 1] = ','.join(columns) + '\n'
-
-            with open('expenses.csv', 'w') as file:
-                file.writelines(lines)
-
-            print("Expense updated successfully!")
-
-            
-
-
+            exp.payment_method = new_value
         elif choice == 5:
-            print("Exiting the program.")
-            break
+            exp.description = new_value
+        else:
+            print("Invalid choice.")
+            return
+
+        write_expenses(expenses)
+        print("✅ Expense updated successfully!")
+
+    except ValueError:
+        print("❌ Invalid input.")
+
+
+# -------------------- MENU --------------------
+def show_menu():
+    print("\n====== Expense Management System ======")
+    print("1. Add Expense")
+    print("2. View Expenses")
+    print("3. Update Expense")
+    print("4. Reset Expenses")
+    print("5. Exit")
+
+
+def main():
+    initialize_file()
+
+    while True:
+        show_menu()
+
+        try:
+            choice = int(input("Enter your choice: "))
+
+            if choice == 1:
+                add_expense()
+            elif choice == 2:
+                view_expenses()
+            elif choice == 3:
+                update_expense()
+            elif choice == 4:
+                reset_expenses()
+            elif choice == 5:
+                print("Exiting the program...")
+                break
+            else:
+                print("Invalid choice.")
+
+        except ValueError:
+            print("❌ Please enter a valid number.")
+
+
+if __name__ == "__main__":
+    main()
